@@ -39,8 +39,11 @@
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
 	int res;
-
-	res = lstat(path, stbuf);
+ int res_ssd;
+ char path_ssd[100]="";
+ strcat(path_ssd,XMP_SSD);
+ strcat(path_ssd,path);
+	res = lstat(path_ssd, stbuf);
 	if (res == -1)
 		return -errno;
 
@@ -148,10 +151,13 @@ static int xmp_unlink(const char *path)
 
 static int xmp_rmdir(const char *path)
 {
-	int res;
-
-	res = rmdir(path);
-	if (res == -1)
+	int res,res_ssd;
+char path_ssd[100]="";
+strcat(path_ssd,XMP_SSD);
+strcat(path_ssd,path);
+        res_ssd=rmdir(path);
+res = rmdir(path_ssd);
+	if (res == -1||res_ssd==-1)
 		return -errno;
 
 	return 0;
@@ -170,12 +176,17 @@ static int xmp_symlink(const char *from, const char *to)
 
 static int xmp_rename(const char *from, const char *to)
 {
-	int res;
-
+	int res,res_ssd;
+char from_ssd[100]="";
+char to_ssd[100]="";      
+strcat(from_ssd,XMP_SSD);
+strcat(from_ssd,from);
+strcat(to_ssd,XMP_SSD);
+strcat(to_ssd,to);
 	res = rename(from, to);
-	if (res == -1)
+ res_ssd =rename(from_ssd,to_ssd);
+	if (res == -1||res_ssd==-1)
 		return -errno;
-
 	return 0;
 }
 
@@ -427,7 +438,6 @@ int main(int argc, char *argv[])
    xmp_data->threshold=0;
    sscanf(argv[2],"%d",&xmp_data->threshold);
    xmp_data->ssd=argv[3];
-   printf("ssd:%s\n",xmp_data->ssd);
    xmp_data->hdd=argv[4];
      char* argv_f[2];
      argv_f[0]=argv[0];
