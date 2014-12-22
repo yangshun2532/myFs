@@ -9,7 +9,8 @@
   gcc -Wall fusexmp.c `pkg-config fuse --cflags --libs` -o fusexmp
 */
 
-#define FUSE_USE_VERSION 26
+
+#include "fusexmp.h"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -32,6 +33,8 @@
 #ifdef HAVE_SETXATTR
 #include <sys/xattr.h>
 #endif
+
+
 
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
@@ -116,10 +119,17 @@ static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 
 static int xmp_mkdir(const char *path, mode_t mode)
 {
-	int res;
-
-	res = mkdir(path, mode);
-	if (res == -1)
+	int res,res_;
+        char path_ssd[100]="";
+        strcat(path_ssd,XMP_SSD);
+        strcat(path_ssd,path);
+FILE* fp=fopen("/home/guest/test","w");
+fprintf(fp,"path_ssd:%s\n",path_ssd);
+fprintf(fp,"path:%s\n",path);
+fclose(fp);
+	res = mkdir(path_ssd, mode);
+        res_=mkdir(path,mode);
+	if (res == -1||res_==-1)
 		return -errno;
 
 	return 0;
@@ -407,6 +417,25 @@ static struct fuse_operations xmp_oper = {
 
 int main(int argc, char *argv[])
 {
-	umask(0);
-	return fuse_main(argc, argv, &xmp_oper, NULL);
+    int fuse_stat;
+    struct xmp_state *xmp_data;
+    xmp_data = calloc(sizeof(struct xmp_state), 1);
+    if (xmp_data == NULL) {
+        fprintf(stdout, "Error during calloc(). %s", strerror(errno));
+        return -1;
+    }
+   xmp_data->threshold=0;
+   sscanf(argv[2],"%d",&xmp_data->threshold);
+   xmp_data->ssd=argv[3];
+   printf("ssd:%s\n",xmp_data->ssd);
+   xmp_data->hdd=argv[4];
+     char* argv_f[2];
+     argv_f[0]=argv[0];
+     argv_f[1]=argv[1];
+     argv_f[2]="-d";
+     int argc_f=2;
+    fuse_stat = fuse_main(argc_f, argv_f, &xmp_oper, xmp_data);
+    
+    return fuse_stat;
+   
 }
