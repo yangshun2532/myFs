@@ -53,8 +53,10 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 static int xmp_access(const char *path, int mask)
 {
 	int res;
-
-	res = access(path, mask);
+char path_ssd[100]="";
+ strcat(path_ssd,XMP_SSD);
+ strcat(path_ssd,path);
+	res = access(path_ssd, mask);
 	if (res == -1)
 		return -errno;
 
@@ -82,8 +84,10 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	(void) offset;
 	(void) fi;
-
-	dp = opendir(path);
+char path_ssd[100]="";
+ strcat(path_ssd,XMP_SSD);
+ strcat(path_ssd,path);
+	dp = opendir(path_ssd);
 	if (dp == NULL)
 		return -errno;
 
@@ -103,17 +107,20 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 {
 	int res;
+char path_ssd[100]="";
+ strcat(path_ssd,XMP_SSD);
+ strcat(path_ssd,path);
 
 	/* On Linux this could just be 'mknod(path, mode, rdev)' but this
 	   is more portable */
 	if (S_ISREG(mode)) {
-		res = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
+		res = open(path_ssd, O_CREAT | O_EXCL | O_WRONLY, mode);
 		if (res >= 0)
 			res = close(res);
 	} else if (S_ISFIFO(mode))
-		res = mkfifo(path, mode);
+		res = mkfifo(path_ssd, mode);
 	else
-		res = mknod(path, mode, rdev);
+		res = mknod(path_ssd, mode, rdev);
 	if (res == -1)
 		return -errno;
 
@@ -130,9 +137,8 @@ FILE* fp=fopen("/home/guest/test","w");
 fprintf(fp,"path_ssd:%s\n",path_ssd);
 fprintf(fp,"path:%s\n",path);
 fclose(fp);
-	res = mkdir(path_ssd, mode);
-        res_=mkdir(path,mode);
-	if (res == -1||res_==-1)
+        res_=mkdir(path_ssd,mode);
+	if (res_==-1)
 		return -errno;
 
 	return 0;
@@ -141,8 +147,11 @@ fclose(fp);
 static int xmp_unlink(const char *path)
 {
 	int res;
-
-	res = unlink(path);
+int res_ssd;
+ char path_ssd[100]="";
+ strcat(path_ssd,XMP_SSD);
+ strcat(path_ssd,path);
+	res = unlink(path_ssd);
 	if (res == -1)
 		return -errno;
 
@@ -155,9 +164,8 @@ static int xmp_rmdir(const char *path)
 char path_ssd[100]="";
 strcat(path_ssd,XMP_SSD);
 strcat(path_ssd,path);
-        res_ssd=rmdir(path);
-res = rmdir(path_ssd);
-	if (res == -1||res_ssd==-1)
+        res_ssd=rmdir(path_ssd);
+	if (res_ssd==-1)
 		return -errno;
 
 	return 0;
@@ -166,8 +174,13 @@ res = rmdir(path_ssd);
 static int xmp_symlink(const char *from, const char *to)
 {
 	int res;
-
-	res = symlink(from, to);
+ char from_ssd[100]="";
+ strcat(from_ssd,XMP_SSD);
+strcat(from_ssd,from);
+char to_ssd[100]="";
+strcat(to_ssd,XMP_SSD);
+strcat(to_ssd,to);
+	res = symlink(from_ssd, to_ssd);
 	if (res == -1)
 		return -errno;
 
@@ -183,9 +196,8 @@ strcat(from_ssd,XMP_SSD);
 strcat(from_ssd,from);
 strcat(to_ssd,XMP_SSD);
 strcat(to_ssd,to);
-	res = rename(from, to);
  res_ssd =rename(from_ssd,to_ssd);
-	if (res == -1||res_ssd==-1)
+	if (res_ssd==-1)
 		return -errno;
 	return 0;
 }
@@ -193,8 +205,14 @@ strcat(to_ssd,to);
 static int xmp_link(const char *from, const char *to)
 {
 	int res;
+ char from_ssd[100]="";
+ strcat(from_ssd,XMP_SSD);
+strcat(from_ssd,from);
+char to_ssd[100]="";
+strcat(to_ssd,XMP_SSD);
+strcat(to_ssd,to);
 
-	res = link(from, to);
+	res = link(from_ssd, to_ssd);
 	if (res == -1)
 		return -errno;
 
@@ -204,8 +222,11 @@ static int xmp_link(const char *from, const char *to)
 static int xmp_chmod(const char *path, mode_t mode)
 {
 	int res;
+char path_ssd[100]="";
+strcat(path_ssd,XMP_SSD);
+strcat(path_ssd,path);
 
-	res = chmod(path, mode);
+	res = chmod(path_ssd, mode);
 	if (res == -1)
 		return -errno;
 
@@ -215,8 +236,11 @@ static int xmp_chmod(const char *path, mode_t mode)
 static int xmp_chown(const char *path, uid_t uid, gid_t gid)
 {
 	int res;
+char path_ssd[100]="";
+strcat(path_ssd,XMP_SSD);
+strcat(path_ssd,path);
 
-	res = lchown(path, uid, gid);
+	res = lchown(path_ssd, uid, gid);
 	if (res == -1)
 		return -errno;
 
@@ -226,8 +250,11 @@ static int xmp_chown(const char *path, uid_t uid, gid_t gid)
 static int xmp_truncate(const char *path, off_t size)
 {
 	int res;
+char path_ssd[100]="";
+strcat(path_ssd,XMP_SSD);
+strcat(path_ssd,path);
 
-	res = truncate(path, size);
+	res = truncate(path_ssd, size);
 	if (res == -1)
 		return -errno;
 
@@ -238,9 +265,11 @@ static int xmp_truncate(const char *path, off_t size)
 static int xmp_utimens(const char *path, const struct timespec ts[2])
 {
 	int res;
-
+char path_ssd[100]="";
+strcat(path_ssd,XMP_SSD);
+strcat(path_ssd,path);
 	/* don't use utime/utimes since they follow symlinks */
-	res = utimensat(0, path, ts, AT_SYMLINK_NOFOLLOW);
+	res = utimensat(0, path_ssd, ts, AT_SYMLINK_NOFOLLOW);
 	if (res == -1)
 		return -errno;
 
@@ -251,8 +280,10 @@ static int xmp_utimens(const char *path, const struct timespec ts[2])
 static int xmp_open(const char *path, struct fuse_file_info *fi)
 {
 	int res;
-
-	res = open(path, fi->flags);
+char path_ssd[100]="";
+ strcat(path_ssd,XMP_SSD);
+ strcat(path_ssd,path);
+	res = open(path_ssd, fi->flags);
 	if (res == -1)
 		return -errno;
 
@@ -267,7 +298,10 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	int res;
 
 	(void) fi;
-	fd = open(path, O_RDONLY);
+char path_ssd[100]="";
+ strcat(path_ssd,XMP_SSD);
+ strcat(path_ssd,path);
+	fd = open(path_ssd, O_RDONLY);
 	if (fd == -1)
 		return -errno;
 
@@ -286,7 +320,10 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 	int res;
 
 	(void) fi;
-	fd = open(path, O_WRONLY);
+char path_ssd[100]="";
+ strcat(path_ssd,XMP_SSD);
+ strcat(path_ssd,path);
+	fd = open(path_ssd, O_WRONLY);
 	if (fd == -1)
 		return -errno;
 
@@ -301,8 +338,10 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 static int xmp_statfs(const char *path, struct statvfs *stbuf)
 {
 	int res;
-
-	res = statvfs(path, stbuf);
+char path_ssd[100]="";
+ strcat(path_ssd,XMP_SSD);
+ strcat(path_ssd,path);
+	res = statvfs(path_ssd, stbuf);
 	if (res == -1)
 		return -errno;
 
@@ -330,6 +369,7 @@ static int xmp_fsync(const char *path, int isdatasync,
 	(void) fi;
 	return 0;
 }
+
 
 #ifdef HAVE_POSIX_FALLOCATE
 static int xmp_fallocate(const char *path, int mode,
@@ -406,6 +446,7 @@ static struct fuse_operations xmp_oper = {
 	.chmod		= xmp_chmod,
 	.chown		= xmp_chown,
 	.truncate	= xmp_truncate,
+      //  .LOOKUP         = xmp_LOOKUP,
 #ifdef HAVE_UTIMENSAT
 	.utimens	= xmp_utimens,
 #endif
