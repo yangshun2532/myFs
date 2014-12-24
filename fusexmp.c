@@ -34,8 +34,58 @@
 #include <sys/xattr.h>
 #endif
 
+int isLink(const char* path)
+{
+  struct stat statbuf;
+  unsigned short int modes;
+  lstat(path,&statbuf);
+  modes=statbuf.st_mode;
+  return S_ISLNK(modes);
+}
 
+int addXMP(const char *path,char *xattr)
+{
+   int i;
+   for(i=0;i<=strlen(path);i++)
+   {
+     xattr[i]=path[i];
+   }
+   int len_ch=strlen(path);
+   char *ch1=".xattr_";
+   int len_ch1=strlen(ch1);
+   int k=0;
+   for(i=len_ch-1;i>=0;i--)
+   {
+        if(path[i]=='/')
+        {
+           k=i+1;
+           break;
+        }
+    } 
+    for(i=len_ch+len_ch1;i>=k+len_ch1;i--)
+    {
+      xattr[i]=xattr[i-len_ch1];
+    }
+    for(i=0;i<len_ch1;i++)
+    {
+        xattr[k+i]=ch1[i];
+    }
+     xattr[len_ch+len_ch1]='\0';
+     return 0;
+}
 
+int getStat(const char *path,struct stat *stbuf)
+{
+   int res;
+   res=lgetxttar(path,"commomStat",stbuf,sizeof(stuct stat)) ;
+   return res;
+}
+int setStat(const char *path,stuct stat *stbuf)
+{
+   int res;
+   res=lsetxttar(path,"commomStat",stbuf,sizeof(stuct stat),0);
+   return res;
+}
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
 	int res;
@@ -68,6 +118,7 @@ static int xmp_readlink(const char *path, char *buf, size_t size)
 	int res;
 
 	res = readlink(path, buf, size - 1);
+        int a =isLink(path);
 	if (res == -1)
 		return -errno;
 

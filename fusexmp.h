@@ -22,6 +22,12 @@ struct xmp_state {
     int threshold;
 };
 
+int isLink(const char *);  //if is ,return 1
+
+int addXMP(const char *,char *);//if succcess,return 0
+
+
+
 // some useful macros, if you want
 //
 #define XMP_DATA ((struct melange_state *) fuse_get_context()->private_data)
@@ -30,6 +36,8 @@ struct xmp_state {
     ((struct xmp_state *) fuse_get_context()->private_data)->ssd
 #define XMP_HDD \
     ((struct xmp_state *) fuse_get_context()->private_data)->hdd
+#define XMP_TH \
+     ((struct xmp_state *) fuse_get_context()->private_data)->threshold
 
 
 #endif
