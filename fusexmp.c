@@ -43,6 +43,33 @@ int isLink(const char* path)
   return S_ISLNK(modes);
 }
 
+int isLinkToHdd(const char*path)
+{
+	int* fp;
+    fp=open(path_ssd,O_RDONLY);
+    char s[100]="";
+    char* p=XMP_HDD;
+    int len=strlen(p);
+    int n=len;
+    int m=0;
+    while(n!=0)
+    {
+    	int m=read(fp,s,n);
+    	n-=m;
+    }
+    int mark=1;
+    for(i=0;i<len;i++)
+    {
+      if(p[i]!=s[i])    //  
+      {
+        mark=0;
+        break;   
+      } 
+    }
+    close(fd);
+    return mark;
+}
+
 int addXMP(const char *path,char *xattr)
 {
    int i;
@@ -51,7 +78,7 @@ int addXMP(const char *path,char *xattr)
      xattr[i]=path[i];
    }
    int len_ch=strlen(path);
-   char *ch1=".xattr_";
+   char ch1[]=".xattr_";
    int len_ch1=strlen(ch1);
    int k=0;
    for(i=len_ch-1;i>=0;i--)
@@ -77,13 +104,13 @@ int addXMP(const char *path,char *xattr)
 int getStat(const char *path,struct stat *stbuf)
 {
    int res;
-   res=lgetxttar(path,"commomStat",stbuf,sizeof(stuct stat)) ;
+   res=getxattr(path,"commomStat",stbuf,sizeof(struct stat)) ;
    return res;
 }
-int setStat(const char *path,stuct stat *stbuf)
+int setStat(const char *path,struct stat *stbuf)
 {
    int res;
-   res=lsetxttar(path,"commomStat",stbuf,sizeof(stuct stat),0);
+   res=setxattr(path,"commomStat",stbuf,sizeof(struct stat),0);
    return res;
 }
 static int xmp_getattr(const char *path, struct stat *stbuf)
@@ -93,10 +120,20 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
  char path_ssd[100]="";
  strcat(path_ssd,XMP_SSD);
  strcat(path_ssd,path);
-	res = lstat(path_ssd, stbuf);
+ char path_xattr[100]="";
+ addXMP(path_ssd,path_xattr);
+  if(isLink(path_ssd)&&isLinkToHdd(path_ssd))   //if the path is a link
+  {
+    res=getxattr(path_xattr,stbuf);
+    if(res==-1)
+    	return -errno;
+  }
+  else
+  {	
+    res = stat(path_ssd, stbuf);
 	if (res == -1)
-		return -errno;
-
+	return -errno;
+  }
 	return 0;
 }
 
@@ -106,6 +143,8 @@ static int xmp_access(const char *path, int mask)
 char path_ssd[100]="";
  strcat(path_ssd,XMP_SSD);
  strcat(path_ssd,path);
+
+ //有待扩展，如果是大文件，则测试.xattr文件
 	res = access(path_ssd, mask);
 	if (res == -1)
 		return -errno;
@@ -247,6 +286,29 @@ strcat(from_ssd,XMP_SSD);
 strcat(from_ssd,from);
 strcat(to_ssd,XMP_SSD);
 strcat(to_ssd,to);
+
+struct stat tmp;
+stat(path_ssd,&tmp);
+
+char from_hdd[100]="";
+ strcat(fome_hdd,XMP_HDD);
+ strcat(fome_hdd,fome);
+ char from_xattr[100]="";
+ addXMP(fron_ssd,from_xattr);
+
+ char to_hdd[100]="";
+ strcat(to_hdd,XMP_HDD);
+ strcat(to_hdd,to);
+ char to_xattr[100]="";
+ addXMP(to_ssd,to_xattr);
+
+if(isLink(path_ssd)&&isLinkToHdd(path_ssd)
+{
+    rename(from_ssd,to_ssd);
+    rename();
+}
+
+
  res_ssd =rename(from_ssd,to_ssd);
 	if (res_ssd==-1)
 		return -errno;
@@ -374,6 +436,11 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 char path_ssd[100]="";
  strcat(path_ssd,XMP_SSD);
  strcat(path_ssd,path);
+ char path_hdd[100]="";
+ strcat(path_hdd,XMP_HDD);
+ strcat(path_hdd,path);
+ char path_xattr[100]="";
+ addXMP(path_ssd,path_xattr);
 	fd = open(path_ssd, O_WRONLY);
 	if (fd == -1)
 		return -errno;
@@ -381,8 +448,65 @@ char path_ssd[100]="";
 	res = pwrite(fd, buf, size, offset);
 	if (res == -1)
 		res = -errno;
-
 	close(fd);
+       struct stat ssdFile;
+     if（isLink(path_ssd)&&isLinkToHdd(path_ssd)）
+     {
+          stat(path_hdd,&ssdFile);
+          setxattr(path_xattr,&ssdFile);
+     }
+     else
+     {
+     	stat(path_ssd,&ssdFile);
+     	if(ssdFile.st_size>XMP_TH)
+     	{
+     	    char dirpath[100]="";
+     	    char fileName[100]="";
+     	    int start = 0;
+            int i;
+            for(i=0;i<strlen(path);i++)
+            {
+            	dirpath[i]=path[i];
+            	if(path[i]=='/')
+            	{
+            		start = i;
+            		dirpath[i+1]=0;
+            		char absolutPath[100]="";
+            		strcat(absolutPath,XMP_HDD);
+            		strcat(absolutPath,dirpath);
+            		dir=opendir(absolutPath);
+            		if(dir==NULL)
+            		{
+            			mkdir(absolutPath,0777);
+            		}
+            	}
+            }
+     	    //nt fdHdd=open(path_xattr,O_EXCL|O_CREAT,S_IRUSR|S_IWUSR|S_IXUSR);
+     	    int fdHdd=open(path_hdd,O_EXCL|O_CREAT,S_IRUSR|S_IWUSR|S_IXUSR);
+            if(fdHdd==-1)
+            	return -errno;
+            int count;
+            char buf[4096];
+            fd=open(path_ssd,O_RDONLY);
+            while((n=read(fd,buf,4096))>0)
+            {
+            	write(fdHdd,buf,n);
+            }
+            close(fd);
+            close(fdHdd);
+            int fdXattr=open(path_xattr,O_EXCL|O_CREAT,S_IRUSR|S_IWUSR|S_IXUSR);
+            close (fdXattr);
+     	    struct stat tmp;
+     	    stat(path_hdd,&tmp);
+            tmp.st_atime=ssdFile.atime;
+            tmp.st_mtime=ssdFile.mtime;
+            tmp.st_ctime=ssdFile.ctime;
+     	    setxattr(path_xattr,&tmp);
+            unlink(path_ssd);
+     	    symlink(path_ssd,path_hdd);
+     	}
+     }
+
 	return res;
 }
 
